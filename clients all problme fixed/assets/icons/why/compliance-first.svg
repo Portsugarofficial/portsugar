@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" role="img" aria-label="Checklist with protective shield">
+<g stroke="#1c3fae" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+<path d="M42 20H30a6 6 0 0 0-6 6v78a6 6 0 0 0 6 6h50a6 6 0 0 0 6-6V82"/><path d="M86 62V26a6 6 0 0 0-6-6H68"/>
+<rect x="42" y="10" width="26" height="16" rx="5"/>
+<path d="M33 44l4 4 7-8M52 44h28M33 62l4 4 7-8M52 62h22M33 80l4 4 7-8M52 80h12"/>
+</g>
+<g stroke="#e5242f" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="#fff">
+<path d="M94 64 78 70v14c0 12 7 20 16 25 9-5 16-13 16-25V70Z"/><path d="m86 87 6 6 11-12" fill="none"/>
+</g></svg>

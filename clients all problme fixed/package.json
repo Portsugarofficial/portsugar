@@ -1,0 +1,12 @@
+{
+  "name": "portsugar-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PortSugar website and Vercel serverless supplier enquiry form",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.16"
+  }
+}

@@ -1,0 +1,19 @@
+PORTSUGAR WEBSITE — MOBILE REFERENCE FIX QA REPORT
+
+Change made
+- Updated only the final mobile-specific About Us CSS in assets/styles.css.
+- The mobile hero now displays the complete supplied assets/about-hero.jpg at its natural aspect ratio with no cover-crop and no CSS mask. The image itself contains the white left-side fade, so the ship, cranes, sea, and reflections remain intact.
+- Kept mobile story/philosophy content stacked and readable.
+- Kept the four trust cards in a two-column mobile grid, with responsive type and illustrations.
+- Kept the pallet image uncropped and above the call-to-action text on phones.
+- Desktop/tablet rules and other HTML pages were not intentionally changed.
+
+Checks performed
+- Confirmed the About Us HTML references the expected hero, four trust-card SVGs, philosophy icons, and pallet asset.
+- Confirmed the ship image is 1400x789 and the CSS uses natural height/object-fit: contain on phones.
+- Checked for required HTML pages and local assets in the packaged website.
+- Validated the final ZIP archive with unzip -t and successfully extracted it.
+
+Limitations
+- A headless browser screenshot comparison was not completed in this environment, so pixel-perfect rendering on physical phones is not claimed.
+- Contact form email delivery still requires the correct Vercel environment variables and a successful live delivery test.

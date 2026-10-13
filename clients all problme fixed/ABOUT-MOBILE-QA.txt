@@ -1,0 +1,30 @@
+PortSugar About Us — mobile layout QA
+Date: 2026-10-12
+
+Problem
+- On phones, the About hero used object-fit: contain on about-hero.jpg.
+- That file is 1400×789 and is blank white until about x=820. Contain kept the blank margin, so the ship, cranes, and sea collapsed into a short strip on the right.
+- At 320px the four trust cards were two columns, so titles such as "End-to-End Import Management" were unreadably narrow.
+- Several earlier mobile rules disagreed with each other. The rule that actually won was the last max-width: 700px block.
+
+What changed
+- assets/styles.css only. No HTML, copy, URLs, images, logo, JavaScript, or API changes.
+- Phones (max-width: 700px): the About hero image is object-fit: cover at aspect-ratio 0.735 and object-position 100% 50%.
+  That keeps the full height of the photograph (sky, cranes, ship, horizon, blue sea, reflections) and drops only the empty left margin.
+  A short top and bottom mask feathers the photo into the white page. It does not cover the hull or the water.
+- Text stays above the image. Side-by-side text and ship remains the layout from 701px upward, including desktop.
+- At 349px and below, the four trust cards stack in one column. From 350px to 700px they stay two columns.
+
+Viewports actually tested in a browser
+- 320, 360, 375, 390, 430, 768, 1024, 1440.
+- No horizontal overflow on About, Home, Contact, Privacy, or Terms at 390 and 1440.
+- No page JavaScript errors on those loads.
+
+Desktop regression
+- At 1024 and 1440 the About hero is still object-fit: contain at the file's own 1400/789 ratio, with the same left fade, story, philosophy, four cards, and pallet call-to-action.
+- Home, contact, privacy, and terms were not edited.
+
+Remaining notes
+- The source photo places the bow close to the right edge, so the ship still meets the right side of the screen. It is not additionally cropped.
+- Below 350px the trust cards are one column on purpose. Two columns return at 360px.
+- Tablet widths from 701px up still use the approved side-by-side hero.
