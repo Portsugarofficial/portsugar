@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" role="img" aria-label="Globe with location markers">
+<g stroke="#1c3fae" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="58" cy="64" r="40"/><ellipse cx="58" cy="64" rx="17" ry="40"/><path d="M58 24v80M18 64h80M24 45h68M24 83h68"/>
+</g>
+<g stroke="#e5242f" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" fill="#fff">
+<path d="M96 8c-7 0-12 5-12 12 0 9 12 21 12 21s12-12 12-21c0-7-5-12-12-12Z"/><circle cx="96" cy="20" r="4.2"/>
+<path d="M22 56c-6 0-10 4-10 10 0 8 10 18 10 18s10-10 10-18c0-6-4-10-10-10Z"/><circle cx="22" cy="66" r="3.6"/>
+</g></svg>

@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "functions": {
+    "api/send-enquiry.js": {
+      "maxDuration": 10
+    }
+  },
+  "cleanUrls": false
+}
