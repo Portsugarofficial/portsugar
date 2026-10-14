@@ -125,7 +125,10 @@ module.exports = async function handler(req, res) {
   const allowedOrigins = new Set([
     'https://oveshmalpuracyberlab-lab.github.io',
     'https://portsugar.com',
-    'https://www.portsugar.com'
+    'https://www.portsugar.com',
+    'https://portsugarfinaldemo.vercel.app',
+    'https://portsugarfinaldemo-oveshmalpuracyberlab-labs-projects.vercel.app',
+    'https://portsugarfinaldemo-git-main-oveshmalpuracyberlab-labs-projects.vercel.app'
   ]);
   const origin = String(req.headers.origin || '');
 
