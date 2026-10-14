@@ -90,16 +90,30 @@ function page(res, status, title, message, req) {
 }
 
 async function submitGoogleForm(fields) {
+  // Google Form currently marks price, company and phone as required.
+  // Website treats them as optional — send a clear placeholder so the
+  // submission is accepted and still recorded in Google Forms responses.
+  const googleFields = {
+    ...fields,
+    price: fields.price || 'Not provided',
+    company: fields.company || 'Not provided',
+    phone: fields.phone || 'Not provided'
+  };
+
   const payload = new URLSearchParams();
 
   for (const [entry, field] of Object.entries(GOOGLE_FORM_ENTRIES)) {
-    payload.set(entry, fields[field] || '');
+    payload.set(entry, googleFields[field] || '');
   }
 
   const response = await fetch(GOOGLE_FORM_ACTION, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+      'User-Agent': 'Mozilla/5.0 (compatible; PortSugar-Enquiry/1.0)',
+      Origin: 'https://docs.google.com',
+      Referer:
+        'https://docs.google.com/forms/d/e/1FAIpQLScd7M7csNrwQBe8bQ1U7eL8qHD6bHXhXRC0WPL_ZuvX-yMK2Q/viewform'
     },
     body: payload.toString(),
     redirect: 'follow',
