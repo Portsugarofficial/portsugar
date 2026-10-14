@@ -122,50 +122,19 @@ async function submitGoogleForm(fields) {
 }
 
 module.exports = async function handler(req, res) {
-  const allowedOrigins = new Set([
-    'https://oveshmalpuracyberlab-lab.github.io',
-    'https://portsugar.com',
-    'https://www.portsugar.com',
-    'https://portsugarfinaldemo.vercel.app',
-    'https://portsugarfinaldemo-oveshmalpuracyberlab-labs-projects.vercel.app',
-    'https://portsugarfinaldemo-git-main-oveshmalpuracyberlab-labs-projects.vercel.app'
-  ]);
   const origin = String(req.headers.origin || '');
-  let originHost = '';
 
-  try {
-    originHost = origin ? new URL(origin).host : '';
-  } catch (error) {
-    originHost = '';
-  }
-
-  // Permit the stable Vercel domain, official Vercel-generated deployment URLs
-  // for this project, and same-origin requests. Keep unrelated origins blocked.
-  const isProjectVercelOrigin =
-    /^portsugarfinaldemo(?:-[a-z0-9]+)?-oveshmalpuracyberlab-labs-projects\.vercel\.app$/i.test(originHost);
-  const isAllowedOrigin =
-    !origin ||
-    allowedOrigins.has(origin) ||
-    isProjectVercelOrigin ||
-    originHost === String(req.headers.host || '');
-
-  if (origin && isAllowedOrigin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Idempotency-Key');
-    res.setHeader('Access-Control-Max-Age', '86400');
-  }
+  // This is a public enquiry endpoint used by static sites on multiple hosts.
+  // No cookies or credentials are used, so wildcard CORS allows GitHub Pages,
+  // Hostinger, Vercel, and other client-approved static hosts to call the API.
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Idempotency-Key');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  res.setHeader('Vary', 'Origin');
 
   if (req.method === 'OPTIONS') {
-    if (!origin || !isAllowedOrigin) {
-      return res.status(403).json({ ok: false, message: 'This origin is not allowed to submit the form.' });
-    }
     return res.status(204).end();
-  }
-
-  if (origin && !isAllowedOrigin) {
-    return res.status(403).json({ ok: false, message: 'This origin is not allowed to submit the form.' });
   }
 
   if (req.method !== 'POST') {
