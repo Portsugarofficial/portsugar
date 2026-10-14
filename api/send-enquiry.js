@@ -131,8 +131,25 @@ module.exports = async function handler(req, res) {
     'https://portsugarfinaldemo-git-main-oveshmalpuracyberlab-labs-projects.vercel.app'
   ]);
   const origin = String(req.headers.origin || '');
+  let originHost = '';
 
-  if (origin && allowedOrigins.has(origin)) {
+  try {
+    originHost = origin ? new URL(origin).host : '';
+  } catch (error) {
+    originHost = '';
+  }
+
+  // Permit the stable Vercel domain, official Vercel-generated deployment URLs
+  // for this project, and same-origin requests. Keep unrelated origins blocked.
+  const isProjectVercelOrigin =
+    /^portsugarfinaldemo(?:-[a-z0-9]+)?-oveshmalpuracyberlab-labs-projects\.vercel\.app$/i.test(originHost);
+  const isAllowedOrigin =
+    !origin ||
+    allowedOrigins.has(origin) ||
+    isProjectVercelOrigin ||
+    originHost === String(req.headers.host || '');
+
+  if (origin && isAllowedOrigin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -141,13 +158,13 @@ module.exports = async function handler(req, res) {
   }
 
   if (req.method === 'OPTIONS') {
-    if (!origin || !allowedOrigins.has(origin)) {
+    if (!origin || !isAllowedOrigin) {
       return res.status(403).json({ ok: false, message: 'This origin is not allowed to submit the form.' });
     }
     return res.status(204).end();
   }
 
-  if (origin && !allowedOrigins.has(origin)) {
+  if (origin && !isAllowedOrigin) {
     return res.status(403).json({ ok: false, message: 'This origin is not allowed to submit the form.' });
   }
 
