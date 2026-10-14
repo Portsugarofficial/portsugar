@@ -1,19 +1,14 @@
-const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 
-// PortSugar email configuration
-const DEFAULT_RECIPIENT = 'info@portsugar.com';
 const MAX = 4000;
 const UNITS = ['Pieces', 'Cartons', 'Kilograms', 'Tonnes', 'Litres', 'Other'];
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_PER_WINDOW = 5;
 
-// Best-effort in-memory protection per serverless instance
 const hits = new Map();
 const sent = new Map();
 const inflight = new Set();
 
-// Google Forms integration
 const GOOGLE_FORM_ACTION =
   'https://docs.google.com/forms/d/e/1FAIpQLScd7M7csNrwQBe8bQ1U7eL8qHD6bHXhXRC0WPL_ZuvX-yMK2Q/formResponse';
 
@@ -32,28 +27,14 @@ const GOOGLE_FORM_ENTRIES = {
   'entry.1913804794': 'phone'
 };
 
-const prune = () => {
-  const now = Date.now();
-
-  for (const [key, timestamps] of hits) {
-    const keep = timestamps.filter((time) => now - time < WINDOW_MS);
-    if (keep.length) hits.set(key, keep);
-    else hits.delete(key);
-  }
-
-  for (const [key, timestamp] of sent) {
-    if (now - timestamp > WINDOW_MS) sent.delete(key);
-  }
-};
-
 const escapeHtml = (value = '') =>
-  String(value).replace(/[&<>"']/g, (char) => ({
+  String(value).replace(/[&<>"']/g, (c) => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
     "'": '&#39;'
-  })[char]);
+  })[c]);
 
 const clean = (value, max = 300) =>
   String(value ?? '')
@@ -61,49 +42,24 @@ const clean = (value, max = 300) =>
     .trim()
     .slice(0, max);
 
-// Submit the same validated enquiry to Google Forms.
-// HTTP success alone does not prove that a row reached the linked Sheet.
-async function submitGoogleForm(fields) {
-  const payload = new URLSearchParams();
+function prune() {
+  const now = Date.now();
 
-  for (const [entry, field] of Object.entries(GOOGLE_FORM_ENTRIES)) {
-    payload.set(entry, fields[field] || '');
+  for (const [key, values] of hits) {
+    const keep = values.filter((time) => now - time < WINDOW_MS);
+    if (keep.length) hits.set(key, keep);
+    else hits.delete(key);
   }
 
-  const response = await fetch(GOOGLE_FORM_ACTION, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
-    },
-    body: payload.toString(),
-    redirect: 'follow',
-    signal: AbortSignal.timeout(12000)
-  });
-
-  const html = await response.text();
-
-  if (!response.ok) {
-    throw new Error(`Google Forms returned HTTP ${response.status}`);
+  for (const [key, time] of sent) {
+    if (now - time > WINDOW_MS) sent.delete(key);
   }
-
-  // Google may return HTTP 200 even if a response was not recorded.
-  // Check for a known confirmation message, then verify the Sheet manually.
-  if (!/your response has been recorded|response has been recorded/i.test(html)) {
-    throw new Error(
-      'Google Forms response was not confirmed; check the form and linked Sheet'
-    );
-  }
-
-  return true;
 }
 
 function page(res, status, title, message, req) {
-  if (
-    req &&
-    /application\/json/.test(String(req.headers?.accept || ''))
-  ) {
-    res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Cache-Control', 'no-store');
 
+  if (/application\/json/i.test(String(req?.headers?.accept || ''))) {
     return res.status(status).json({
       ok: status < 400,
       message: status < 400 ? message : `${title}. ${message}`
@@ -112,7 +68,6 @@ function page(res, status, title, message, req) {
 
   res.status(status);
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-store');
 
   return res.end(`<!doctype html>
 <html lang="en">
@@ -134,10 +89,41 @@ function page(res, status, title, message, req) {
 </html>`);
 }
 
+async function submitGoogleForm(fields) {
+  const payload = new URLSearchParams();
+
+  for (const [entry, field] of Object.entries(GOOGLE_FORM_ENTRIES)) {
+    payload.set(entry, fields[field] || '');
+  }
+
+  const response = await fetch(GOOGLE_FORM_ACTION, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+    },
+    body: payload.toString(),
+    redirect: 'follow',
+    signal: AbortSignal.timeout(15000)
+  });
+
+  const html = await response.text();
+
+  if (!response.ok) {
+    throw new Error(`Google Forms returned HTTP ${response.status}`);
+  }
+
+  if (
+    !/your response has been recorded|response has been recorded/i.test(html)
+  ) {
+    throw new Error(
+      'Google Forms did not return the expected confirmation'
+    );
+  }
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-
     return page(
       res,
       405,
@@ -147,7 +133,7 @@ module.exports = async function handler(req, res) {
     );
   }
 
-  // Same-origin protection
+  // Same-origin check
   const origin = String(req.headers.origin || '');
 
   if (origin) {
@@ -173,7 +159,7 @@ module.exports = async function handler(req, res) {
   const body =
     req.body && typeof req.body === 'object' ? req.body : {};
 
-  // Honeypot: silently reject automated submissions
+  // Reject honeypot submissions
   if (clean(body.website, 200)) {
     return page(
       res,
@@ -233,7 +219,7 @@ module.exports = async function handler(req, res) {
     );
   }
 
-  // Date and unit validation
+  // Validate date format and unit
   const dateOk =
     /^\d{4}-\d{2}-\d{2}$/.test(fields.date) &&
     !Number.isNaN(Date.parse(fields.date + 'T00:00:00Z'));
@@ -265,7 +251,7 @@ module.exports = async function handler(req, res) {
     );
   }
 
-  // Per-IP rate limiting
+  // Best-effort rate limit
   prune();
 
   const ip = String(
@@ -308,7 +294,7 @@ module.exports = async function handler(req, res) {
       res,
       200,
       'Thank you for your enquiry',
-      'Your supplier search request has already been sent to the PortSugar team. There is no need to submit it again.',
+      'Your supplier search request has already been recorded. There is no need to submit it again.',
       req
     );
   }
@@ -323,112 +309,11 @@ module.exports = async function handler(req, res) {
     );
   }
 
-  // Required SMTP environment variables
-  const requiredEnv = [
-    'SMTP_HOST',
-    'SMTP_PORT',
-    'SMTP_USER',
-    'SMTP_PASS',
-    'MAIL_FROM'
-  ];
-
-  const missing = requiredEnv.filter((key) => !process.env[key]);
-
-  if (missing.length) {
-    console.error(
-      'PortSugar mail configuration missing:',
-      missing.join(', ')
-    );
-
-    return page(
-      res,
-      503,
-      'Enquiries are not configured yet',
-      'The form is installed, but email delivery has not been configured. Please email info@portsugar.com directly for now.',
-      req
-    );
-  }
-
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: Number(process.env.SMTP_PORT) === 465,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    },
-    connectionTimeout: 6000,
-    greetingTimeout: 6000,
-    socketTimeout: 8000
-  });
-
-  const recipient =
-    process.env.CONTACT_TO_EMAIL || DEFAULT_RECIPIENT;
-
-  const subject =
-    `PortSugar supplier enquiry: ${fields.product.replace(/[\r\n]+/g, ' ')}`;
-
-  const emailText = `A new supplier search enquiry was submitted through portsugar.com.
-
-CONTACT DETAILS
-Name: ${fields.name}
-Business email: ${fields.email}
-Company: ${fields.company || 'Not provided'}
-Phone: ${fields.phone || 'Not provided'}
-
-PRODUCT REQUIREMENTS
-Product: ${fields.product}
-Specifications: ${fields.specs}
-Quantity: ${fields.quantity} ${fields.unit}
-Target price per unit: ${fields.price || 'Not provided'}
-Preferred country of origin: ${fields.country || 'Not provided'}
-Needed by: ${fields.date}
-Additional notes: ${fields.details || 'Not provided'}
-
-Submitted: ${new Date().toISOString()}
-`;
-
   inflight.add(dupKey);
 
   try {
-    // Attempt both destinations. A Google Forms failure is logged separately
-    // so a temporary Google issue does not suppress the existing email.
-    const googlePromise = submitGoogleForm(fields)
-      .then(() => ({ ok: true }))
-      .catch((error) => {
-        console.error(
-          'PortSugar Google Forms submission failed:',
-          error?.message || 'Unknown error'
-        );
-        return { ok: false };
-      });
-
-    const info = await transporter.sendMail({
-      from: process.env.MAIL_FROM,
-      to: recipient,
-      replyTo: fields.email,
-      subject,
-      text: emailText
-    });
-
-    if (
-      !info ||
-      !Array.isArray(info.accepted) ||
-      info.accepted.length === 0 ||
-      (info.rejected && info.rejected.length)
-    ) {
-      throw new Error('Mail provider did not accept the message');
-    }
-
-    // Wait for the Google attempt, but never treat HTTP alone as proof
-    // that the response appeared in the linked Google Sheet.
-    const googleResult = await googlePromise;
-
-    if (!googleResult.ok) {
-      console.error(
-        'PortSugar enquiry email was accepted, but Google Sheets delivery remains unverified.'
-      );
-    }
+    // Submit directly to Google Forms; no SMTP settings required.
+    await submitGoogleForm(fields);
 
     sent.set(dupKey, Date.now());
     recent.push(Date.now());
@@ -438,20 +323,20 @@ Submitted: ${new Date().toISOString()}
       res,
       200,
       'Thank you for your enquiry',
-      'Your supplier search request has been sent to the PortSugar team. We will review your requirements and contact you using the details you provided.',
+      'Your supplier search request has been submitted. We will review your requirements and contact you using the details you provided.',
       req
     );
   } catch (error) {
     console.error(
-      'PortSugar SMTP delivery failed:',
+      'PortSugar Google Forms submission failed:',
       error?.message || 'Unknown error'
     );
 
     return page(
       res,
       502,
-      'Your request could not be sent yet',
-      'The website could not send your enquiry email. Please email info@portsugar.com directly or try again later.',
+      'Your request could not be submitted yet',
+      'The website could not confirm your Google Forms submission. Please try again later or email info@portsugar.com directly.',
       req
     );
   } finally {
