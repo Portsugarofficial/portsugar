@@ -122,6 +122,32 @@ async function submitGoogleForm(fields) {
 }
 
 module.exports = async function handler(req, res) {
+  const allowedOrigins = new Set([
+    'https://oveshmalpuracyberlab-lab.github.io',
+    'https://portsugar.com',
+    'https://www.portsugar.com'
+  ]);
+  const origin = String(req.headers.origin || '');
+
+  if (origin && allowedOrigins.has(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Idempotency-Key');
+    res.setHeader('Access-Control-Max-Age', '86400');
+  }
+
+  if (req.method === 'OPTIONS') {
+    if (!origin || !allowedOrigins.has(origin)) {
+      return res.status(403).json({ ok: false, message: 'This origin is not allowed to submit the form.' });
+    }
+    return res.status(204).end();
+  }
+
+  if (origin && !allowedOrigins.has(origin)) {
+    return res.status(403).json({ ok: false, message: 'This origin is not allowed to submit the form.' });
+  }
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return page(
@@ -131,29 +157,6 @@ module.exports = async function handler(req, res) {
       'Please submit the enquiry using the contact form.',
       req
     );
-  }
-
-  // Same-origin check
-  const origin = String(req.headers.origin || '');
-
-  if (origin) {
-    let originHost = '';
-
-    try {
-      originHost = new URL(origin).host;
-    } catch (error) {
-      // Invalid Origin header
-    }
-
-    if (originHost !== String(req.headers.host || '')) {
-      return page(
-        res,
-        403,
-        'Request not allowed',
-        'This form can only be submitted from the PortSugar website.',
-        req
-      );
-    }
   }
 
   const body =
