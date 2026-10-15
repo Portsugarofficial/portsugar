@@ -867,3 +867,27 @@
 @media (min-width: 801px) {
   .contact-process > img { max-height: none; height: auto; object-fit: contain; margin: 4px -10px auto; }
 }
+
+/* Contact Us: center only the four icons in the What Happens Next white circles. */
+.contact-process .process-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.contact-process .process-icon > .icon-img {
+  display: block;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  object-fit: contain;
+  object-position: center;
+  flex: 0 0 36px;
+}
+@media (max-width: 650px) {
+  .contact-process .process-icon > .icon-img {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+}
