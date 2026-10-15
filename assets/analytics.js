@@ -6,7 +6,7 @@
   var hostname = window.location.hostname.toLowerCase();
   if (hostname !== "portsugar.com" && hostname !== "www.portsugar.com") return;
 
-  var GA4_MEASUREMENT_ID = ""; // TODO: insert the PortSugar GA4 Measurement ID (format: G-XXXXXXXXXX).
+  var GA4_MEASUREMENT_ID = "G-FVN5RHYVEZ";
   if (!/^G-[A-Z0-9]+$/.test(GA4_MEASUREMENT_ID)) return;
 
   window.dataLayer = window.dataLayer || [];
