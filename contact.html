@@ -31,7 +31,7 @@
   function check(el){
     var value=el.value.trim();
     if(el.required&&!value){setErr(el,msgs[el.name]||'This field is required.');return false;}
-    if(el.type==='email'&&value&&!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value)){setErr(el,'Please enter a valid email address, e.g. you@company.com.');return false;}
+    if(el.type==='email'&&value&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)){setErr(el,'Please enter a valid email address, e.g. you@company.com.');return false;}
     setErr(el,'');return true;
   }
   function show(kind,message){status.className='form-status '+kind;status.textContent=message;status.style.display='block';status.focus();}
